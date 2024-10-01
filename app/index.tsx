@@ -5,6 +5,7 @@ import { SplashScreen } from 'expo-router';
 import { StatusBar, View } from 'react-native';
 import { ThemeContext } from 'react-native-ficus-ui';
 
+import '@/database';
 import theme, { THEME_KEY } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();

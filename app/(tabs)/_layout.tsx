@@ -11,12 +11,6 @@ const HomeTabs = () => {
           options: { headerShown: false },
         },
         {
-          route: 'repositories',
-          title: 'Repositories',
-          icon: 'folder',
-          options: { headerShown: false },
-        },
-        {
           route: 'account',
           title: 'Account',
           icon: 'user',
