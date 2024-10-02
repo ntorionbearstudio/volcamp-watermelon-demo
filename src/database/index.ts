@@ -58,8 +58,6 @@ export const syncDatabase = async () => {
         timestamp: number;
       };
 
-      console.log(JSON.stringify(changes));
-
       return { changes, timestamp };
     },
     pushChanges: async ({ changes, lastPulledAt }) => {
