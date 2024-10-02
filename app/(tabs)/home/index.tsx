@@ -17,10 +17,17 @@ import {
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { FieldInput } from '@/components/FieldInput';
+import { syncDatabase } from '@/database';
 import Task from '@/models/Task';
 import { createTask, useTasks } from '@/modules/tasks/tasks.service';
 
-const TaskComponent = ({ task, onPress }) => {
+const TaskComponent = ({
+  task,
+  onPress,
+}: {
+  task: Task;
+  onPress: () => void;
+}) => {
   if (task.id === 'separator') {
     return (
       <Box my="lg">
@@ -79,6 +86,11 @@ const Home = () => {
     await refresh();
   };
 
+  const handleSynchronise = async () => {
+    await syncDatabase();
+    await refresh();
+  };
+
   const form = useForm({
     onValidSubmit: (values) => {
       handleCreateTask({ name: values.name, icon: selectedEmoji });
@@ -126,6 +138,7 @@ const Home = () => {
           full
           colorScheme="brand"
           prefix={<Icon name="sync" mr="md" color="white" />}
+          onPress={handleSynchronise}
         >
           Resynchroniser
         </Button>

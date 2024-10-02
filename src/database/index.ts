@@ -1,6 +1,8 @@
 import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import { SyncDatabaseChangeSet, synchronize } from '@nozbe/watermelondb/sync';
 
+import { api } from '@/api/generated-api';
 import Task from '@/models/Task';
 
 import migrations from './migrations';
@@ -29,3 +31,64 @@ export const database = new Database({
   adapter,
   modelClasses: [Task],
 });
+
+export const syncDatabase = async () => {
+  console.log('🍉 SYNCING DATABASE...');
+
+  await synchronize({
+    database,
+    migrationsEnabledAtVersion: 1,
+    pullChanges: async ({ lastPulledAt, schemaVersion, migration }) => {
+      console.log('🍉 PULL CHANGES');
+
+      console.log({
+        lastPulledAt: lastPulledAt as number,
+        schemaVersion,
+        migration: JSON.stringify(migration),
+      });
+
+      const data = await api.syncPullChanges({
+        lastPulledAt: lastPulledAt as number,
+        schemaVersion,
+        migration: JSON.stringify(migration),
+      });
+
+      const { changes, timestamp } = data as {
+        changes: SyncDatabaseChangeSet;
+        timestamp: number;
+      };
+
+      console.log(JSON.stringify(changes));
+
+      return { changes, timestamp };
+    },
+    pushChanges: async ({ changes, lastPulledAt }) => {
+      console.log('🍉 PUSH CHANGES');
+
+      await api.syncPushChanges({
+        changes: {
+          tasks: {
+            created: changes.tasks?.created.map((task) => ({
+              id: task.id,
+              name: task.name,
+              icon: task.icon,
+              is_done: task.is_done,
+              created_at: task.created_at,
+              updated_at: task.updated_at,
+            })),
+            updated: changes.tasks?.updated.map((task) => ({
+              id: task.id,
+              name: task.name,
+              icon: task.icon,
+              is_done: task.is_done,
+              created_at: task.created_at,
+              updated_at: task.updated_at,
+            })),
+            deleted: changes.tasks?.deleted,
+          },
+        },
+        lastPulledAt,
+      });
+    },
+  });
+};
