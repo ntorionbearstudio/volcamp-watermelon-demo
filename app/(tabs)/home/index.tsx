@@ -87,6 +87,11 @@ const TaskComponent = ({
             </Box>
           )}
         </Box>
+        {!!task?.comment?.length && (
+          <Box bg="gray.200" borderRadius="lg" p="lg" mt="md">
+            <Text>{task?.comment}</Text>
+          </Box>
+        )}
       </Box>
     </TouchableOpacity>
   );

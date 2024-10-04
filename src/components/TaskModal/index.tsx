@@ -32,24 +32,27 @@ const TaskModal = ({
 
   const handleCreateTask = async ({
     name,
+    comment,
     icon,
     isUrgent,
   }: {
     name: string;
+    comment: string;
     icon: string;
     isUrgent: boolean;
   }) => {
     if (task?.id) {
-      console.log({ isUrgent });
       await updateTask({
         task,
         name,
+        comment,
         icon,
         isUrgent,
       });
     } else {
       await createTask({
         name,
+        comment,
         icon,
         isUrgent,
       });
@@ -61,6 +64,7 @@ const TaskModal = ({
     onValidSubmit: (values) => {
       handleCreateTask({
         name: values.name,
+        comment: values.comment,
         icon: selectedEmoji || '',
         isUrgent,
       });
@@ -99,6 +103,16 @@ const TaskModal = ({
             }}
             required="Le nom de la tâche est requis"
             mt="md"
+          />
+          <FieldInput
+            name="comment"
+            defaultValue={task?.comment}
+            componentProps={{
+              placeholder: 'Commentaire',
+              autoCorrect: false,
+              spellCheck: false,
+              focusBorderColor: 'brand.500',
+            }}
           />
           <Checkbox
             colorScheme="brand"

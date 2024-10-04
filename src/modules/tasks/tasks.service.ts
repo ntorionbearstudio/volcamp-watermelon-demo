@@ -24,10 +24,12 @@ export const useTasks = () => {
 
 export const createTask = async ({
   name,
+  comment,
   icon,
   isUrgent,
 }: {
   name: string;
+  comment: string;
   icon: string;
   isUrgent: boolean;
 }): Promise<Task | null> => {
@@ -35,9 +37,10 @@ export const createTask = async ({
     const createdTask = await database.write(async () => {
       return await database.get('tasks').create((task) => {
         (task as Task).name = name;
+        (task as Task).comment = comment;
         (task as Task).icon = icon;
         (task as Task).isDone = false;
-        (t as Task).isUrgent = isUrgent;
+        (task as Task).isUrgent = isUrgent;
       });
     });
     return createdTask as Task;
@@ -49,11 +52,13 @@ export const createTask = async ({
 export const updateTask = async ({
   task,
   name,
+  comment,
   icon,
   isUrgent,
 }: {
   task: Task;
   name: string;
+  comment: string;
   icon: string;
   isUrgent: boolean;
 }): Promise<Task | null> => {
@@ -61,6 +66,7 @@ export const updateTask = async ({
     const updatedTask = await database.write(async () => {
       return await task.update((t) => {
         (t as Task).name = name;
+        (t as Task).comment = comment;
         (t as Task).icon = icon;
         (t as Task).isDone = false;
         (t as Task).isUrgent = isUrgent;
