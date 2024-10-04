@@ -1,14 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { Formiz, useForm } from '@formiz/core';
-import EmojiSelector, { Categories } from 'react-native-emoji-selector';
 import {
+  Badge,
   Box,
   Button,
-  Center,
   HStack,
   Icon,
-  Modal,
   Text,
   TouchableOpacity,
   VStack,
@@ -16,17 +13,33 @@ import {
 } from 'react-native-ficus-ui';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
-import { FieldInput } from '@/components/FieldInput';
+import TaskModal from '@/components/TaskModal';
 import { syncDatabase } from '@/database';
 import Task from '@/models/Task';
-import { createTask, useTasks } from '@/modules/tasks/tasks.service';
+import { useTasks } from '@/modules/tasks/tasks.service';
+
+const sortByName = (a: Task, b: Task) => {
+  const nameA = a.name.toUpperCase(); // ignore upper and lowercase
+  const nameB = b.name.toUpperCase(); // ignore upper and lowercase
+  if (nameA < nameB) {
+    return -1;
+  }
+  if (nameA > nameB) {
+    return 1;
+  }
+
+  // names must be equal
+  return 0;
+};
 
 const TaskComponent = ({
   task,
   onPress,
+  onLongPress,
 }: {
   task: Task;
   onPress: () => void;
+  onLongPress: () => void;
 }) => {
   if (task.id === 'separator') {
     return (
@@ -39,28 +52,55 @@ const TaskComponent = ({
   }
 
   return (
-    <TouchableOpacity overflow="visible" onPress={onPress}>
-      <Box p="lg" bg="white" borderRadius="xl" opacity={task.isDone ? 0.6 : 1}>
-        <HStack spacing="md" alignItems="center">
-          <Text fontSize="6xl">{task.icon}</Text>
-          <Text
-            fontSize="xl"
-            textDecorLine={task.isDone ? 'line-through' : 'none'}
-            textDecorStyle="solid"
-            textDecorColor="black"
-          >
-            {task.name}
-          </Text>
-        </HStack>
+    <TouchableOpacity
+      overflow="visible"
+      onPress={onPress}
+      onLongPress={onLongPress}
+    >
+      <Box
+        p="lg"
+        bg="white"
+        borderWidth={1}
+        borderColor="gray.200"
+        borderRadius="xl"
+        opacity={task.isDone ? 0.6 : 1}
+      >
+        <Box
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <HStack spacing="md" alignItems="center">
+            <Text fontSize="6xl">{task.icon}</Text>
+            <Text
+              fontSize="xl"
+              textDecorLine={task.isDone ? 'line-through' : 'none'}
+              textDecorStyle="solid"
+              textDecorColor="black"
+            >
+              {task.name}
+            </Text>
+          </HStack>
+
+          <Box>
+            <Badge variant="outline" colorScheme="red">
+              Urgent
+            </Badge>
+          </Box>
+        </Box>
       </Box>
     </TouchableOpacity>
   );
 };
 
 const Home = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isModalOpen,
+    onOpen: onOpenModal,
+    onClose: onCloseModal,
+  } = useDisclosure();
   const { tasks, refresh, isLoading } = useTasks();
-  const [selectedEmoji, setSelectedEmoji] = useState('🍊');
+  const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const handlePressTask = (task: Task) => async () => {
     if (task.isDone) {
@@ -72,18 +112,9 @@ const Home = () => {
     await refresh();
   };
 
-  const handleCreateTask = async ({
-    name,
-    icon,
-  }: {
-    name: string;
-    icon: string;
-  }) => {
-    await createTask({
-      name,
-      icon,
-    });
-    await refresh();
+  const handleLongPressTask = (task: Task) => () => {
+    setSelectedTask(task);
+    onOpenModal();
   };
 
   const handleSynchronise = async () => {
@@ -91,17 +122,17 @@ const Home = () => {
     await refresh();
   };
 
-  const form = useForm({
-    onValidSubmit: (values) => {
-      handleCreateTask({ name: values.name, icon: selectedEmoji });
-      onClose();
-    },
-  });
+  useEffect(() => {
+    syncDatabase();
+  }, []);
 
   const allTasks = [
-    ...tasks.filter((task) => !task.isDone),
+    ...tasks.filter((task) => !task.isDone).sort(sortByName),
     { id: 'separator' } as Task,
-    ...tasks.filter((task) => task.isDone),
+    ...tasks
+      .filter((task) => task.isDone)
+      .sort((a, b) => Number(a.updatedAt) - Number(b.updatedAt))
+      .slice(0, 4),
   ];
 
   return (
@@ -110,7 +141,11 @@ const Home = () => {
         data={allTasks}
         refreshing={isLoading}
         renderItem={({ item }: { item: Task }) => (
-          <TaskComponent task={item} onPress={handlePressTask(item)} />
+          <TaskComponent
+            task={item}
+            onPress={handlePressTask(item)}
+            onLongPress={handleLongPressTask(item)}
+          />
         )}
         keyExtractor={(item) => `task-${item.id}`}
         itemLayoutAnimation={LinearTransition.springify()
@@ -130,7 +165,10 @@ const Home = () => {
           colorScheme="white"
           borderWidth={1}
           borderColor="brand.500"
-          onPress={onOpen}
+          onPress={() => {
+            setSelectedTask(undefined);
+            onOpenModal();
+          }}
         >
           Ajouter une tâche
         </Button>
@@ -144,51 +182,12 @@ const Home = () => {
         </Button>
       </VStack>
 
-      <Modal
-        h={400}
-        isOpen={isOpen}
-        p="xl"
-        onBackdropPress={onClose}
-        avoidKeyboard
-      >
-        <Box justifyContent="space-between" flex={1}>
-          <Formiz connect={form}>
-            <Text fontWeight="bold" fontSize="2xl">
-              Ajouter une tâche
-            </Text>
-
-            <FieldInput
-              name="name"
-              componentProps={{
-                placeholder: 'Nom de la tâche',
-                autoFocus: true,
-                autoCorrect: false,
-                spellCheck: false,
-                focusBorderColor: 'brand.500',
-              }}
-              required="Le nom de la tâche est requis"
-              mt="md"
-            />
-            <Center my="md">
-              <Text fontSize={70}>{selectedEmoji}</Text>
-            </Center>
-            <EmojiSelector
-              showHistory={false}
-              showSearchBar={false}
-              showTabs={false}
-              showSectionTitles={false}
-              category={Categories.food}
-              columns={8}
-              onEmojiSelected={setSelectedEmoji}
-            />
-            <VStack spacing="md" mt="md">
-              <Button full colorScheme="brand" onPress={() => form.submit()}>
-                Valider
-              </Button>
-            </VStack>
-          </Formiz>
-        </Box>
-      </Modal>
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={onCloseModal}
+        onRefresh={refresh}
+        task={selectedTask}
+      />
     </Box>
   );
 };

@@ -42,3 +42,26 @@ export const createTask = async ({
     return null;
   }
 };
+
+export const updateTask = async ({
+  task,
+  name,
+  icon,
+}: {
+  task: Task;
+  name: string;
+  icon: string;
+}): Promise<Task | null> => {
+  try {
+    const updatedTask = await database.write(async () => {
+      return await task.update((t) => {
+        (t as Task).name = name;
+        (t as Task).icon = icon;
+        (t as Task).isDone = false;
+      });
+    });
+    return updatedTask as Task;
+  } catch (e) {
+    return null;
+  }
+};
