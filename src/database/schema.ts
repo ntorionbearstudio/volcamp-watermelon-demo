@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 1,
+  version: 2,
   tables: [
     tableSchema({
       name: 'tasks',
@@ -11,6 +11,8 @@ export default appSchema({
         { name: 'is_done', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
+        { name: 'is_urgent', type: 'boolean', isOptional: true },
+        { name: 'comment', type: 'string', isOptional: true },
       ],
     }),
   ],

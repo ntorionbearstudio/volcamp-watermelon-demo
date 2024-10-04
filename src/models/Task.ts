@@ -8,6 +8,10 @@ export default class Task extends Model {
   @text('name') name!: string;
   @field('is_done') isDone!: boolean;
 
+  // V2
+  @field('is_urgent') isUrgent?: boolean;
+  @text('comment') comment?: string;
+
   @date('created_at')
   createdAt?: Date;
   @date('updated_at')

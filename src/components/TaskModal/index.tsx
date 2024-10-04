@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Center,
+  Checkbox,
   Modal,
   Text,
   VStack,
@@ -27,24 +28,30 @@ const TaskModal = ({
   task?: Task;
 }) => {
   const [selectedEmoji, setSelectedEmoji] = useState<string | undefined>('🍊');
+  const [isUrgent, setIsUrgent] = useState<boolean>(false);
 
   const handleCreateTask = async ({
     name,
     icon,
+    isUrgent,
   }: {
     name: string;
     icon: string;
+    isUrgent: boolean;
   }) => {
     if (task?.id) {
+      console.log({ isUrgent });
       await updateTask({
         task,
         name,
         icon,
+        isUrgent,
       });
     } else {
       await createTask({
         name,
         icon,
+        isUrgent,
       });
     }
     await onRefresh();
@@ -52,18 +59,23 @@ const TaskModal = ({
 
   const form = useForm({
     onValidSubmit: (values) => {
-      handleCreateTask({ name: values.name, icon: selectedEmoji || '' });
+      handleCreateTask({
+        name: values.name,
+        icon: selectedEmoji || '',
+        isUrgent,
+      });
       onClose();
     },
   });
 
   useEffect(() => {
     setSelectedEmoji(task?.icon || '🍊');
-  }, [task?.icon]);
+    setIsUrgent(task?.isUrgent || false);
+  }, [task]);
 
   return (
     <Modal
-      h={400}
+      h={500}
       isOpen={isOpen}
       p="xl"
       onBackdropPress={onClose}
@@ -88,6 +100,14 @@ const TaskModal = ({
             required="Le nom de la tâche est requis"
             mt="md"
           />
+          <Checkbox
+            colorScheme="brand"
+            defaultChecked={isUrgent}
+            isChecked={isUrgent}
+            onChecked={setIsUrgent}
+            prefix={<Text flex={1}>Tâche urgente</Text>}
+          />
+
           <Center my="md">
             <Text fontSize={70}>{selectedEmoji}</Text>
           </Center>

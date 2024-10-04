@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import {
+  Badge,
   Box,
   Button,
   HStack,
@@ -80,6 +81,11 @@ const TaskComponent = ({
               {task.name}
             </Text>
           </HStack>
+          {task?.isUrgent && (
+            <Box>
+              <Badge colorScheme="red">Urgent</Badge>
+            </Box>
+          )}
         </Box>
       </Box>
     </TouchableOpacity>
